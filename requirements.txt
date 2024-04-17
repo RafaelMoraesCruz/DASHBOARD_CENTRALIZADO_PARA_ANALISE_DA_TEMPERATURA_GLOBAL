@@ -4,3 +4,4 @@ seaborn==0.13.1
 plotly==5.18.0
 streamlit==1.30.0
 openpyxl==3.1.2
+nbformat==4.2.0

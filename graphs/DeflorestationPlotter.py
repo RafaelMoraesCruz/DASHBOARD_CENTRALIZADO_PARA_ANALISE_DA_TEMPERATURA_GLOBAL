@@ -12,10 +12,9 @@ class Deforestation_plotter:
         return fig
 
     @staticmethod
-    def desmatamento_atraves_dos_anos_pais(df):
-        fig = px.line(df, x=df.index, y="desmatamento", 
-                    title="Amazon deforestation in Brazil among the years", 
-                    labels={"desmatamento" : "Deforestation km²", "ano": "Year"})
+    def desmatamento_atraves_dos_anos_mundo(df):
+        fig = px.line(df, x='ano', y="desmatamento", 
+                    title="Cobertura vegetal perdida mundial ao passar dos anos", labels={"desmatamento" : "Cobertura vegetal perdida"})
         return fig
 
     @staticmethod
@@ -27,7 +26,7 @@ class Deforestation_plotter:
     
     @staticmethod
     def box_deforestation_brazil(df):
-        fig = px.box(data_frame=df, y="desmatamento",title="Useful statistics using about deforestation in Brazil using box plot", labels={"desmatamento" : "Deforestation km²", "ano": "Year"})
+        fig = px.box(data_frame=df, y="desmatamento",title="Distribuição da Cobertura vegetal perdida global",labels={"desmatamento" : "Cobertura vegetal perdida"})
         return fig
 
     @staticmethod

@@ -10,7 +10,7 @@ data_folder = f"{os.getcwd()}/data/deforestation/"
 df = pd.read_excel(f"{data_folder}gfw_2023_statistics_summary_clean_melted.xlsx")
 paises = list(df["country"].unique())
 
-st.subheader("Desmatamento Mundial")
+st.subheader("Cobertura vegetal perdida Mundial")
 
 with st.container():
     st.write("Selecione os países: ")
@@ -19,6 +19,7 @@ with st.container():
 
     with col1:
         checkbox_mundo = st.checkbox("selecione para mostrar o agregado mundial", value=True)
+        selecionados= df["country"].unique()
     if not checkbox_mundo:
         with col2:
             pais1 = st.selectbox("Selecione o país 1", options=paises)
@@ -28,18 +29,17 @@ with st.container():
         min_year = df["ano"].min()
         max_year = df["ano"].max()
         years_range = st.slider(
-        'Select the range of years:',
+        'Selecione o alcance dos anos:',
         min_year, max_year, (min_year, max_year))
         years = [year for year in range(years_range[0], years_range[1]+1)]
-
-        df_for_metric = df[(df["ano"].isin(years) & (df["country"].isin(selecionados)))]
+        df_for_metric = df[(df["ano"].isin(years)) & (df["country"].isin(selecionados))]
 
         # Parei AQUI 15/04/2024
-        sum_metric_desmatamento = df_for_metric.groupby("country").sum().sort_values(by="desmatamento", ascending=False)["desmatamento"].sum()
+        sum_metric_desmatamento = df_for_metric.groupby("ano").sum().sort_values(by="desmatamento", ascending=False)["desmatamento"].sum()
         metric_visibility="hidden"
         if sum_metric_desmatamento!= 0:
             metric_visibility="visible"
-            st.metric(label=f"Total deforestation between {years[0]} - {years[-1]}",
+            st.metric(label=f"Cobertura vegetal perdida total entre os anos de: {years[0]} - {years[-1]}",
                        value=f"{sum_metric_desmatamento}km²",
                          label_visibility=metric_visibility)
         pass
@@ -47,15 +47,14 @@ with st.container():
 with st.container():
 
     col1, col2 = st.columns(2)
-
-    if selecteds:
-        df_for_graph = df[(df["ano"].isin(years) & (df["estado"].isin(selecteds)))]
+    if not checkbox_mundo:
+        df_for_graph = df[(df["ano"].isin(years) & (df["country"].isin(selecionados)))]
         temporal = Deforestation_plotter.desmatamento_atraves_dos_anos_estados(df_for_graph)
         box_plot = Deforestation_plotter.box_deforestation_brazil_states(df_for_graph)
     else:
         df_for_graph = df[df["ano"].isin(years)]
-        df_for_graph = df_for_graph.groupby("ano").sum().sort_values(by="ano")
-        temporal = Deforestation_plotter.desmatamento_atraves_dos_anos_pais(df_for_graph)
+        df_for_graph = df_for_graph.groupby("ano",as_index=False).sum()[["ano","desmatamento"]]
+        temporal = Deforestation_plotter.desmatamento_atraves_dos_anos_mundo(df_for_graph)
         box_plot = Deforestation_plotter.box_deforestation_brazil(df_for_graph)
 
     with col1:
