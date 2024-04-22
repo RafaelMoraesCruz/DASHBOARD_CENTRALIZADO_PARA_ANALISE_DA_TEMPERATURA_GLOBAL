@@ -7,23 +7,23 @@ st.set_page_config(layout="wide")
 df = pd.read_csv("./data/CO2/co2-fossil-plus-land-use.csv")
 
 with st.container():
-    st.title("CO² Emissions")
+    st.title("Emissões de CO²")
 
     col1, col2 = st.columns([2, 4])
     with col1:
-        checkbox = st.checkbox("World", value=True)
+        checkbox = st.checkbox("Mundo", value=True)
         co2_option = st.selectbox(
-            'Select first Entity',
+            '',
             df.columns[3:])
         df_world = df.groupby("Year").sum()[co2_option].reset_index()
         if not checkbox:
-            st.subheader("Select two Entities to compare")
+            st.subheader("Selecione duas entidades para comparar.")
             option1 = st.selectbox(
-            'Select first Entity',
+            'Selecione a primeira entidade.',
             df["Entity"].unique())
 
             option2 = st.selectbox(
-            'Select second Entity',
+            'Selecione a segunda entidade.',
             df["Entity"].unique())
             df_world = df[df["Entity"].isin([option1,option2])].reset_index()
     with col2:
