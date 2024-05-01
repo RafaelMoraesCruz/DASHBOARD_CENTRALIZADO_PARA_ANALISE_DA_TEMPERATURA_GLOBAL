@@ -6,9 +6,9 @@ class Deforestation_plotter:
 
     @staticmethod
     def cobertura_perdida_atraves_dos_anos_paises(df):
-        fig = px.line(df, x="ano", y="desmatamento", color="pais",
+        fig = px.line(df, x="ano", y="desmatamento", color="country",
                     title="Cobertura de floresta perdida comparativo países", 
-                    labels={"desmatamento" : "Cobertura de floresta perdida km²", "ano": "Ano", "pais" : "País"}, markers=True)
+                    labels={"desmatamento" : "Cobertura de floresta perdida km²", "ano": "Ano", "country" : "País"}, markers=True)
         return fig
 
     @staticmethod
@@ -24,5 +24,5 @@ class Deforestation_plotter:
 
     @staticmethod
     def box_cobertura_perdida_paises(df):
-        fig = px.box(data_frame=df, y="desmatamento", color="pais", title="Grafico comparativo da perda da cobertura vegetal entre os países", labels={"desmatamento" : "Cobertura vegetal km²", "pais": "País"})
+        fig = px.box(data_frame=df, y="desmatamento", color="country", title="Grafico comparativo da perda da cobertura vegetal entre os países", labels={"desmatamento" : "Cobertura vegetal km²", "country": "País"})
         return fig
