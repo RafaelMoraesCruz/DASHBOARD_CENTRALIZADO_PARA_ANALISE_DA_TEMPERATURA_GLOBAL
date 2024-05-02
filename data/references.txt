@@ -2,3 +2,5 @@ Extensão de gelo nos oceanos(10^6 km2): https://nsidc.org/data/g02135/versions/
 emissão co2 (toneladas): https://ourworldindata.org/co2-emissions
 Perda_de_cobertura_vegetal (km2): www.globalforestwatch.org
 Temperature (celsius): https://climate.copernicus.eu/copernicus-2024-world-experienced-warmest-january-record
+
+Manaus temperature (celsius): https://www.kaggle.com/datasets/volpatto/temperature-timeseries-for-some-brazilian-cities?resource=download
