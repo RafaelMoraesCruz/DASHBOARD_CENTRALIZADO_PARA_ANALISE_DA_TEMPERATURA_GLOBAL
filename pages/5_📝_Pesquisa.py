@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 df_geral = pd.read_excel("./data/visao_geral_atributos_juntos.xlsx")
-df_geral.rename(columns={"cobertura_vegetal": "perda_cobertura_vegetal"})
+df_geral.rename(columns={"cobertura_vegetal": "perda_cobertura_vegetal"}, inplace=True)
 
 def grafico_heatmap(df):
     cmap = sns.diverging_palette(

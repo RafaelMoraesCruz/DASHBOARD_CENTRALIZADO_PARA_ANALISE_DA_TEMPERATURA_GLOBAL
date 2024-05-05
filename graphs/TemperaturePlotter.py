@@ -20,6 +20,5 @@ class Temperature_plotter:
     def temperature_over_the_years(df, ano1, ano2):
         fig = px.line(data_frame=df, x="year", y="celsius", 
         title=f"Temperatura ao longo dos anos entre os anos: {ano1} - {ano2}",
-        labels={"year": "Ano", "celsius": "Celsius"},
-          markers=True)
+        labels={"year": "Ano", "celsius": "Celsius"})
         return st.plotly_chart(fig)
