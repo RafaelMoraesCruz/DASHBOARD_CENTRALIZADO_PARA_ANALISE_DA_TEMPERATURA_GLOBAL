@@ -3,6 +3,7 @@ import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
+import plotly.express as px
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 df_geral = pd.read_excel("./data/visao_geral_atributos_juntos.xlsx")
@@ -52,6 +53,7 @@ dados_section = st.container()
 col1, col2 = st.columns(2)
 eda_section = st.container()
 cobertura_vegetal_analise = st.container()
+conclusao = st.container()
 
 with dados_section:
 
@@ -118,6 +120,8 @@ with cobertura_vegetal_analise:
     st.write("Antes de realizar a comparação é fundamental o entendimento desses dados ao longo do tempo, para isso é necessário a realização de um gráfico temporal, como mostrado na figura abaixo:")
     df_cobertura_vegetal_paises = df_cobertura_vegetal[df_cobertura_vegetal["country"].isin(["Brazil", "Indonesia", "Democratic Republic of the Congo"])]
     st.pyplot(grafico_paises(df_cobertura_vegetal_paises))
+
+    st.subheader("Comparativo local-global")
     st.write("O gráfico apresenta alguns pontos interessantes, por exemplo, o Brasil é o pais com maior perda vegetal durante os anos, não existe nenhumum ano que algum dos outros 2 países supera o Brasil.")
     st.write("Outro ponto que será estudado é o crescimento em um nível bastante elevado entre os anos de 2015 e 2016 em todos os três países. E logo em seguida a perda de cobertura entra em um declínio também acentuado.")
     st.write("O gráfico a seguir mostra o cenário mundial da perda de cobertura vegetal.")
@@ -128,10 +132,36 @@ with cobertura_vegetal_analise:
     perda_cobertura_2016_brasil = df_cobertura_vegetal_paises[(df_cobertura_vegetal_paises["ano"]== 2016) & (df_cobertura_vegetal_paises["country"] == "Brazil")]["perda_cobertura_vegetal"].values[0]
     perda_cobertura_2016_indonesia = df_cobertura_vegetal_paises[(df_cobertura_vegetal_paises["ano"]== 2016) & (df_cobertura_vegetal_paises["country"] == "Indonesia")]["perda_cobertura_vegetal"].values[0]
 
-    st.write(f"No ano de 2016 o mundo perdeu {perda_cobertura_2016}km² de vegetação natural, No ano de 2016 o Brasil perdeu {perda_cobertura_2016_brasil}km² de vegetação natural, No ano de 2016 a Indonésia perdeu {perda_cobertura_2016_indonesia}km² de vegetação natural, No ano de 2016 Congo perdeu {perda_cobertura_2016_congo}km² de vegetação natural")
+    st.write(f"No ano de 2016 o mundo perdeu {perda_cobertura_2016}km² de vegetação natural, No ano de 2016 o Brasil perdeu {perda_cobertura_2016_brasil}km² de vegetação natural, No ano de 2016 a Indonésia perdeu {perda_cobertura_2016_indonesia}km² de vegetação natural, No ano de 2016 Congo perdeu {perda_cobertura_2016_congo}km² de vegetação natural.")
 
     representacao_2016 = (perda_cobertura_2016_brasil+perda_cobertura_2016_indonesia+perda_cobertura_2016_congo)/perda_cobertura_2016
     representacao_2016_brasil = perda_cobertura_2016_brasil/perda_cobertura_2016
-    st.write(f"Juntos esses países representaram {round(representacao_2016,3)}% da perda global no ano de 2016. O Brasil, o país que mais perdeu naquele ano, apresenta {round(representacao_2016_brasil,3)}% de impacto global")
+    st.write(f"Juntos esses países representaram {round(representacao_2016,3)}% da perda global no ano de 2016. O Brasil, o país que mais perdeu naquele ano, apresenta {round(representacao_2016_brasil,3)}% de impacto global.")
 
+    st.write("Sabendo que o Brasil, Congo e a Indonesia exercem um grande impacto no cenário global no ano de 2016, torna-se vital o entendimento desses países ao longo dos anos. A visualização disso fica mais claro no próximo gráfico")
 
+    df_paises = df_cobertura_vegetal_paises[df_cobertura_vegetal_paises["country"].isin(["Democratic Republic of the Congo", "Brazil", "Indonesia"])]
+    df_impacto_cobertura_vegetal_paises = df_paises.merge(df_geral, how="inner", on="ano")[["country", "ano", "perda_cobertura_vegetal_x", "perda_cobertura_vegetal_y"]]
+    df_impacto_cobertura_vegetal_paises["%_contribuicao_pais"] = df_impacto_cobertura_vegetal_paises["perda_cobertura_vegetal_x"] / df_impacto_cobertura_vegetal_paises["perda_cobertura_vegetal_y"]
+    df_impacto_cobertura_vegetal_paises["%_contribuicao_pais"] = df_impacto_cobertura_vegetal_paises["%_contribuicao_pais"].round(3) * 100
+    stacked_bar_plot = px.bar(data_frame=df_impacto_cobertura_vegetal_paises, x="ano", y="%_contribuicao_pais", color="country",title="% que cada país representa no cenário global de perda de cobertura vegetal.", text_auto=True)
+    stacked_bar_plot.update_yaxes(range=[0, 100], ticksuffix="%")
+    stacked_bar_plot.add_hline(y=50, line_dash="dash", line_color="black")
+    stacked_bar_plot.add_annotation(x=2002, y=45, text="50%", showarrow=False, font=dict(color="black", size=14))
+    stacked_bar_plot.update_layout(legend=dict(
+    orientation="h",
+    yanchor="bottom",
+    y=1.02,
+    xanchor="right",
+    x=1
+))
+    st.plotly_chart(stacked_bar_plot)
+
+    st.write("Em todos os anos do estudo (2002 até 2022) os três países representam mais de 50% da perda de cobertura vegetal, em alguns anos O brasil passa disso sozinho.")
+    st.write("O entendimento desses valores e da representação de influência desses páises é de extrema importância para a concepção de medidas mais eficientes para a preservação do ambiente.")
+    st.write("Estudando o Brasil por exemplo, o país teve uma perda de 28309km² no ano de 2016, desse número, 7893km² foram só de desmatamento de áreas na amazônia, o que corresponde a 28% da cobertura vegetal perdida no país naquele ano.")
+    st.write("É sempre bom lembrar que o desmatamento é diferente da perda de cobertura vegetal. Desmatamento é a remoção ou destruição de florestas e outras formas de vegetação natural pela ação humana. Perda de cobertura vegetal refere-se a perda de vegetação com mais de 5m de altura por ação do homem ou não, alguns dos fatores considerados são: colheita mecânica, incêndios, doenças, danos causados por tempestades, desmatamento... A imagem embaixo deixa isso mais claro.")
+    st.image("./assets/desmatamento_perda.png")
+
+with conclusao:
+    st.header("Conclusão")
