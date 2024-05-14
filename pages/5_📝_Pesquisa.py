@@ -2,10 +2,14 @@ import streamlit as st
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 df_geral = pd.read_excel("./data/visao_geral_atributos_juntos.xlsx")
 df_geral.rename(columns={"cobertura_vegetal": "perda_cobertura_vegetal"}, inplace=True)
+
+df_cobertura_vegetal = pd.read_excel("./data/deforestation/gfw_2023_statistics_summary_clean_melted.xlsx")
+df_cobertura_vegetal.rename(columns={"desmatamento": "perda_cobertura_vegetal"}, inplace=True)
 
 def grafico_heatmap(df):
     cmap = sns.diverging_palette(
@@ -25,10 +29,29 @@ def grafico_heatmap(df):
 
     return plt.show()
 
+def grafico_paises(df):
+    ax =sns.lineplot(data=df, x="ano", y="perda_cobertura_vegetal", hue="country",legend = 'full')
+    plt.title("Perda de cobertura vegetal ao longo dos anos")
+    plt.ylabel("Perda de cobertura vegetal km²")
+    sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
+    return plt.show()
+
+def grafico_perda_cobertura(df):
+    sns.lineplot(data=df, x="ano", y="perda_cobertura_vegetal")
+    sns.lineplot(data=df[df["ano"].isin([2015,2016])], x="ano", y="perda_cobertura_vegetal",color="red")
+    plt.title("Perda de cobertura vegetal ao longo dos anos, cenário global")
+    plt.ylabel("Perda de cobertura vegetal km²")
+    plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
+    # plt.vlines(x=2015, ymin=0, ymax=65000, colors="red")
+    # plt.vlines(x=2016, ymin=0, ymax=65000, colors="red")
+    return plt.show()
+
+
 
 dados_section = st.container()
 col1, col2 = st.columns(2)
 eda_section = st.container()
+cobertura_vegetal_analise = st.container()
 
 with dados_section:
 
@@ -74,7 +97,41 @@ with eda_section:
              dos dados, facilita o processo de limpeza...")
     
     st.write("<strong>Correlação dos atributos</strong>", unsafe_allow_html=True)
-    st.dataframe(df_geral.corr())
+    st.dataframe(df_geral.corr(), hide_index=True)
     st.write("<strong>Grafico Heatmap da correlação entre os atributos.</strong>", unsafe_allow_html=True)
     st.pyplot(grafico_heatmap(df_geral))
+
+    st.write("Analisando as figuras acima, é possível perceber que o fator mais bem correlacionado com a temperatura é a perda de cobertura vegetal, por isso, é importante avaliar essa variável com mais cuidado na próxima secção.")
     
+with cobertura_vegetal_analise:
+    st.header("3. Análise Perda de Cobertura Vegetal")
+    st.write("A ideia aqui é coletar alguns países que apresentam uma grande perda de cobertura vegetal e fazer um comparativo com o cenário geral, para isso foi-se atrás de um dataset e suas perdas vegetais ao longo dos anos")
+    st.subheader("3.1   visão inicial dos dados")
+    st.dataframe(df_cobertura_vegetal.sort_values(by="perda_cobertura_vegetal", ascending=False), hide_index=True)
+    st.write("Pela visão inicial dos dados é possível perceber que três paises ocupam o ranking com maior perda de cobertura vegetal: Brasil, Indonesia e República democrática do Congo.")
+    st.write("Para isso ficar mais claro, é necessário da análise de média e mediana dos países.")
+    st.write("Média")
+    st.dataframe(df_cobertura_vegetal.groupby("country", as_index=False).agg({"perda_cobertura_vegetal" : "mean"}).sort_values("perda_cobertura_vegetal", ascending=False).rename(columns={"perda_cobertura_vegetal": "perda_cobertura_vegetal_media", "country": "paises"}), hide_index=True)
+    st.write("Mediana")
+    st.dataframe(df_cobertura_vegetal.groupby("country", as_index=False).agg({"perda_cobertura_vegetal" : "median"}).sort_values("perda_cobertura_vegetal", ascending=False).rename(columns={"perda_cobertura_vegetal": "perda_cobertura_vegetal_mediana", "country": "paises"}), hide_index=True)
+    st.write("Aqui fica confirmado que os países com as maiores perdas de cobertura vegetal são Brasil, Indonésia e República Democrática do Congo.")
+    st.write("Antes de realizar a comparação é fundamental o entendimento desses dados ao longo do tempo, para isso é necessário a realização de um gráfico temporal, como mostrado na figura abaixo:")
+    df_cobertura_vegetal_paises = df_cobertura_vegetal[df_cobertura_vegetal["country"].isin(["Brazil", "Indonesia", "Democratic Republic of the Congo"])]
+    st.pyplot(grafico_paises(df_cobertura_vegetal_paises))
+    st.write("O gráfico apresenta alguns pontos interessantes, por exemplo, o Brasil é o pais com maior perda vegetal durante os anos, não existe nenhumum ano que algum dos outros 2 países supera o Brasil.")
+    st.write("Outro ponto que será estudado é o crescimento em um nível bastante elevado entre os anos de 2015 e 2016 em todos os três países. E logo em seguida a perda de cobertura entra em um declínio também acentuado.")
+    st.write("O gráfico a seguir mostra o cenário mundial da perda de cobertura vegetal.")
+
+    st.pyplot(grafico_perda_cobertura(df_geral))
+    perda_cobertura_2016 = df_geral[df_geral["ano"]== 2016]["perda_cobertura_vegetal"].values[0]
+    perda_cobertura_2016_congo = df_cobertura_vegetal_paises[(df_cobertura_vegetal_paises["ano"]== 2016) & (df_cobertura_vegetal_paises["country"] == "Democratic Republic of the Congo")]["perda_cobertura_vegetal"].values[0]
+    perda_cobertura_2016_brasil = df_cobertura_vegetal_paises[(df_cobertura_vegetal_paises["ano"]== 2016) & (df_cobertura_vegetal_paises["country"] == "Brazil")]["perda_cobertura_vegetal"].values[0]
+    perda_cobertura_2016_indonesia = df_cobertura_vegetal_paises[(df_cobertura_vegetal_paises["ano"]== 2016) & (df_cobertura_vegetal_paises["country"] == "Indonesia")]["perda_cobertura_vegetal"].values[0]
+
+    st.write(f"No ano de 2016 o mundo perdeu {perda_cobertura_2016}km² de vegetação natural, No ano de 2016 o Brasil perdeu {perda_cobertura_2016_brasil}km² de vegetação natural, No ano de 2016 a Indonésia perdeu {perda_cobertura_2016_indonesia}km² de vegetação natural, No ano de 2016 Congo perdeu {perda_cobertura_2016_congo}km² de vegetação natural")
+
+    representacao_2016 = (perda_cobertura_2016_brasil+perda_cobertura_2016_indonesia+perda_cobertura_2016_congo)/perda_cobertura_2016
+    representacao_2016_brasil = perda_cobertura_2016_brasil/perda_cobertura_2016
+    st.write(f"Juntos esses países representaram {round(representacao_2016,3)}% da perda global no ano de 2016. O Brasil, o país que mais perdeu naquele ano, apresenta {round(representacao_2016_brasil,3)}% de impacto global")
+
+
