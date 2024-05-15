@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import plotly.express as px
+from pandas import DataFrame
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 df_geral = pd.read_excel("./data/visao_geral_atributos_juntos.xlsx")
@@ -12,7 +13,7 @@ df_geral.rename(columns={"cobertura_vegetal": "perda_cobertura_vegetal"}, inplac
 df_cobertura_vegetal = pd.read_excel("./data/deforestation/gfw_2023_statistics_summary_clean_melted.xlsx")
 df_cobertura_vegetal.rename(columns={"desmatamento": "perda_cobertura_vegetal"}, inplace=True)
 
-def grafico_heatmap(df):
+def grafico_heatmap(df : DataFrame):
     cmap = sns.diverging_palette(
     h_neg=240,
     h_pos=10,
@@ -30,21 +31,25 @@ def grafico_heatmap(df):
 
     return plt.show()
 
-def grafico_paises(df):
+def grafico_paises(df: DataFrame):
     ax =sns.lineplot(data=df, x="ano", y="perda_cobertura_vegetal", hue="country",legend = 'full')
     plt.title("Perda de cobertura vegetal ao longo dos anos")
     plt.ylabel("Perda de cobertura vegetal km²")
     sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
     return plt.show()
 
-def grafico_perda_cobertura(df):
-    sns.lineplot(data=df, x="ano", y="perda_cobertura_vegetal")
+def grafico_perda_cobertura(df: DataFrame):
+    sns.lineplot(data=df, x="ano", y="perda_cobertura_vegetal", color="green")
     sns.lineplot(data=df[df["ano"].isin([2015,2016])], x="ano", y="perda_cobertura_vegetal",color="red")
     plt.title("Perda de cobertura vegetal ao longo dos anos, cenário global")
     plt.ylabel("Perda de cobertura vegetal km²")
     plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
-    # plt.vlines(x=2015, ymin=0, ymax=65000, colors="red")
-    # plt.vlines(x=2016, ymin=0, ymax=65000, colors="red")
+    return plt.show()
+
+def grafico_co2_paises(df: DataFrame):
+    sns.lineplot(data=df, x="ano", y="total_emissao_co2", hue="pais")
+    plt.title("Emissão de CO2 ao longo dos anos dos 5 países que mais emitem")
+    plt.ylabel("Emissão CO2 (bilhões de toneladas)")
     return plt.show()
 
 
@@ -53,12 +58,13 @@ dados_section = st.container()
 col1, col2 = st.columns(2)
 eda_section = st.container()
 cobertura_vegetal_analise = st.container()
+emissao_co2_analise = st.container()
 conclusao = st.container()
 
 with dados_section:
 
     with st.container():
-        st.title("About")
+        st.title("Pesquisa")
         st.header("1. Entendimento dos dados")
         st.write("Antes do estudo ser realizado é necessário o entendimento dos dados, nas próximas linhas serão apresentadas as fontes,\
         as entidades que produziram os dados e a importância daqueles dados para o estudo.")
@@ -140,11 +146,16 @@ with cobertura_vegetal_analise:
 
     st.write("Sabendo que o Brasil, Congo e a Indonesia exercem um grande impacto no cenário global no ano de 2016, torna-se vital o entendimento desses países ao longo dos anos. A visualização disso fica mais claro no próximo gráfico")
 
+    green_colors = ['#00FF00', '#00CC00', '#006600']
     df_paises = df_cobertura_vegetal_paises[df_cobertura_vegetal_paises["country"].isin(["Democratic Republic of the Congo", "Brazil", "Indonesia"])]
     df_impacto_cobertura_vegetal_paises = df_paises.merge(df_geral, how="inner", on="ano")[["country", "ano", "perda_cobertura_vegetal_x", "perda_cobertura_vegetal_y"]]
     df_impacto_cobertura_vegetal_paises["%_contribuicao_pais"] = df_impacto_cobertura_vegetal_paises["perda_cobertura_vegetal_x"] / df_impacto_cobertura_vegetal_paises["perda_cobertura_vegetal_y"]
     df_impacto_cobertura_vegetal_paises["%_contribuicao_pais"] = df_impacto_cobertura_vegetal_paises["%_contribuicao_pais"].round(3) * 100
-    stacked_bar_plot = px.bar(data_frame=df_impacto_cobertura_vegetal_paises, x="ano", y="%_contribuicao_pais", color="country",title="% que cada país representa no cenário global de perda de cobertura vegetal.", text_auto=True)
+    stacked_bar_plot = px.bar(data_frame=df_impacto_cobertura_vegetal_paises,
+                               x="ano", y="%_contribuicao_pais",
+                                 color="country", 
+                                 title="% que cada país representa no cenário global de perda de cobertura vegetal.",
+                                   text_auto=True, color_discrete_sequence=green_colors)
     stacked_bar_plot.update_yaxes(range=[0, 100], ticksuffix="%")
     stacked_bar_plot.add_hline(y=50, line_dash="dash", line_color="black")
     stacked_bar_plot.add_annotation(x=2002, y=45, text="50%", showarrow=False, font=dict(color="black", size=14))
@@ -163,5 +174,49 @@ with cobertura_vegetal_analise:
     st.write("É sempre bom lembrar que o desmatamento é diferente da perda de cobertura vegetal. Desmatamento é a remoção ou destruição de florestas e outras formas de vegetação natural pela ação humana. Perda de cobertura vegetal refere-se a perda de vegetação com mais de 5m de altura por ação do homem ou não, alguns dos fatores considerados são: colheita mecânica, incêndios, doenças, danos causados por tempestades, desmatamento... A imagem embaixo deixa isso mais claro.")
     st.image("./assets/desmatamento_perda.png")
 
+with emissao_co2_analise:
+    st.header("4. Emissão de co2")
+    st.write("Seguindo a fórmula da cobertura vegetal, torna-se necessário a compreensão desse aspecto no cenário micro(países) para ver o impacto real dessa variável e o que pode estar causando números tão altos.")
+    df_emissao_co2 = pd.read_csv("./data/CO2/co2-fossil-plus-land-use.csv")
+    df_emissao_co2 = df_emissao_co2[~df_emissao_co2["Entity"].isin(["North America (excl. USA)", "Low-income countries","World", "Asia", "Upper-middle-income countries", "High-income countries", "Asia (excl. China and India)", "Europe", "Lower-middle-income countries", "North America", "European Union (28)", "Europe (excl. EU-27)", "South America", "European Union (27)", "Europe (excl. EU-28)", "Africa"])]
+    df_emissao_co2.rename(columns={"Entity": "pais", "Code" : "codigo", "Year": "ano", "total_co2_emissions": "total_emissao_co2", "co2_from_land_use" : "emissao_co2_uso_terra", "co2_from_other_sources": "emissao_co2_outras_fontes"}, inplace=True)
+    st.dataframe(df_emissao_co2.sort_values(by="total_emissao_co2", ascending=False), hide_index=True)
+    st.write("Com a visão inicial é possível afirmar que os países que mais emitem CO2 são China, Estados Unidos e Brasil. Mas é necessário um estudo mais afundo para dizer com certeza os países que mais emitem, por isso, o próximo passo é analisar a média e a mediana de cada país. Para esse estudo os anos vão ser limitados de 2000 até 2022")
+    df_emissao_co2 = df_emissao_co2[df_emissao_co2["ano"] >= 2000]
+    st.write("<strong>Média:</strong>", unsafe_allow_html=True)
+    st.dataframe(df_emissao_co2[["pais", "total_emissao_co2"]].groupby("pais").mean().sort_values(by="total_emissao_co2", ascending=False).head(6))
+    st.write("A média das emissões totais de CO2 revela uma visão geral das contribuições ao longo dos anos. A China lidera com uma média de aproximadamente 8,657 bilhões de toneladas, seguida pelos Estados Unidos com cerca de 5,631 bilhões de toneladas. Estes números refletem o rápido crescimento industrial e econômico da China durante o período, bem como o papel dos Estados Unidos como uma economia desenvolvida com altos níveis de consumo energético.")
+    st.write("A Índia, Brasil, Rússia e Indonésia também aparecem na lista, mas com médias significativamente menores.")
+    st.write("<strong>Mediana:</strong>", unsafe_allow_html=True)
+    st.dataframe(df_emissao_co2[["pais", "total_emissao_co2"]].groupby("pais").median().sort_values(by="total_emissao_co2", ascending=False).head(6))
+    st.write("Os dados de mediana oferecem uma perspectiva diferente, mostrando o valor central das emissões ao longo do período, o que pode diminuir o impacto de outliers. A China ainda lidera com uma mediana de 9,593 bilhões de toneladas, superior à média, indicando que suas emissões têm sido consistentemente altas ao longo dos anos.")
+    df_emissao_co2_paises = df_emissao_co2[df_emissao_co2["pais"].isin(["China", "United States", "India", "Russia", "Brazil"])]
+    st.pyplot(grafico_co2_paises(df_emissao_co2_paises))
+    st.write("O gráfico apresenta a grande transformação industrial no mundo, China cresceu muito o número de fábricas em seu território o que explica ter um aumento de emissões ao longo dos anos. EUA mudou um pouco a sua estratégia, fazendo com que as indústrias de suas empresas se concentrassem em países emergentes, como: China, India... o que é possível ver no gráfico, pois a emissão desses países foram as que mais subiram de 2000 para 2022.")
+    df_emissao_co2_porcentagem_global = df_emissao_co2.groupby("ano", as_index=False).sum()[["ano", "total_emissao_co2"]]
+    df_emissao_co2_porcentagem_global = df_emissao_co2_paises.merge(df_emissao_co2_porcentagem_global, how="inner", on="ano")
+    df_emissao_co2_porcentagem_global["%_contribuicao_pais"] = df_emissao_co2_porcentagem_global["total_emissao_co2_x"] / df_emissao_co2_porcentagem_global["total_emissao_co2_y"]
+    df_emissao_co2_porcentagem_global["%_contribuicao_pais"] = df_emissao_co2_porcentagem_global["%_contribuicao_pais"].round(2) * 100
+    co2_color_palete = ["#B5C18E","#481E14", "#F7DCB9", "#DEAC80", "#B99470"]
+    stacked_bar_plot = px.bar(data_frame=df_emissao_co2_porcentagem_global,
+                               x="ano", y="%_contribuicao_pais",
+                                 color="pais", 
+                                 title="% que cada país representa no cenário global de emissão de CO2.",
+                                   text_auto=True, color_discrete_sequence=co2_color_palete)
+    stacked_bar_plot.update_yaxes(range=[0,100] , ticksuffix="%")
+    stacked_bar_plot.add_hline(y=50, line_dash="dash", line_color="black")
+    stacked_bar_plot.add_annotation(x=2000, y=55, text="50%", showarrow=False, font=dict(color="black", size=14))
+    stacked_bar_plot.update_layout(legend=dict(
+    orientation="h",
+    yanchor="bottom",
+    y=1.02,
+    xanchor="right",
+    x=1
+))
+    st.plotly_chart(stacked_bar_plot)
+    st.write("É notório que depois de 2004 os 5 países que mais emitem passam a ser responsáveis por mais de 50% da emissão de todo o planeta. Juntando os últimos dois gráficos percebe-se que embora haja reuniões e acordos para a redução da emissão desse gás, quase nenhuma entidade as respeita. A única entidade que parece respeitar esses acordos é o Brasil.")
+
+
 with conclusao:
-    st.header("Conclusão")
+    st.header("Conclusao")
+    st.write("CO2 -> Estes dados são cruciais para a formulação de políticas ambientais globais e nacionais, pois ajudam a identificar onde os esforços de mitigação podem ser mais eficazes e necessários.")""
