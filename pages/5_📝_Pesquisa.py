@@ -13,6 +13,9 @@ df_geral.rename(columns={"cobertura_vegetal": "perda_cobertura_vegetal"}, inplac
 df_cobertura_vegetal = pd.read_excel("./data/deforestation/gfw_2023_statistics_summary_clean_melted.xlsx")
 df_cobertura_vegetal.rename(columns={"desmatamento": "perda_cobertura_vegetal"}, inplace=True)
 
+df_degelo = pd.read_excel("./data/sea-ice-coverage/seaice-treated.xlsx")
+df_degelo.rename(columns={"Year": "ano", "ice-extent": "extensao_gelo", "hemisphere": "hemisferio"}, inplace=True)
+
 def grafico_heatmap(df : DataFrame):
     cmap = sns.diverging_palette(
     h_neg=240,
@@ -59,6 +62,7 @@ col1, col2 = st.columns(2)
 eda_section = st.container()
 cobertura_vegetal_analise = st.container()
 emissao_co2_analise = st.container()
+degelo = st.container()
 conclusao = st.container()
 
 with dados_section:
@@ -216,6 +220,41 @@ with emissao_co2_analise:
     st.plotly_chart(stacked_bar_plot)
     st.write("É notório que depois de 2004 os 5 países que mais emitem passam a ser responsáveis por mais de 50% da emissão de todo o planeta. Juntando os últimos dois gráficos percebe-se que embora haja reuniões e acordos para a redução da emissão desse gás, quase nenhuma entidade as respeita. A única entidade que parece respeitar esses acordos é o Brasil.")
 
+with degelo:
+    st.header("5. Cobertura de gelo")
+    st.write('A coluna "ano" mostra o ano em que os dados foram coletados, ajudando a ver como a quantidade de gelo mudou ao longo do tempo. A coluna "hemisferio" o hemisfério norte ou sul, o que é importante porque os padrões de gelo podem ser diferentes em cada região. A última coluna diz o tamanho da área coberta por gelo, o que nos ajudar a entender a extensão do gelo em cada ano e hemisfério. Essas informações são importantes para estudar as mudanças no gelo ao longo do tempo e entender melhor as consequências das mudanças climáticas.')
+    st.dataframe(df_degelo, hide_index=True)
+    st.write("O gráfico abaixo mostra a % de cobertura de gelo em cada hemisfério em relação com o cenário mundial")
+    tradutor_hemisferio = {"north": "hemisferio_norte", "south": "hemisferio_sul"}
+    df_degelo["hemisferio"] = df_degelo["hemisferio"].apply(lambda x: tradutor_hemisferio[x])
+    df_degelo_completo = df_degelo.copy()
+    df_degelo = df_degelo[df_degelo["ano"] > 2000]
+    df_por_ano = df_degelo.groupby("ano").agg({"extensao_gelo": "sum"})
+    df_degelo = df_por_ano.merge(right=df_degelo, on="ano", how="left")
+    df_degelo["representacao_total"] = df_degelo["extensao_gelo_y"] / df_degelo["extensao_gelo_x"]
+    df_degelo["representacao_total"] = df_degelo["representacao_total"].round(2) * 100
+    stacked_bar_plot = px.bar(data_frame=df_degelo,
+                               x="ano", y="representacao_total",
+                                 color="hemisferio", 
+                                 title="% que cada hemisfério representa no cenário global de cobertura de gelo",
+                                   text_auto=True)
+    stacked_bar_plot.update_yaxes(range=[0,100] , ticksuffix="%")
+    stacked_bar_plot.update_layout(legend=dict(
+    orientation="h",
+    yanchor="bottom",
+    y=1.02,
+    xanchor="right",
+    x=1
+))
+    st.plotly_chart(stacked_bar_plot)
+    st.write("Existe um balanço entre os hemisférios de cobertura de gelo, sendo 8% a máxima diferença que os hemisférios tiveram de representação. O ano de 2024 está tem uma grande diferença pois esse trabalho foi feito no primeiro semestre de 2024, logo o hemisfério sul ainda não teve o perído de inverno e o norte não teve o período de verão. Isso justifica a presença de uma área maior de gelo no hemisfério norte.")
+    st.write("Para compreensão de números, o Gráfico de linhas fica de melhor visualização, esse gráfico pode ser encontrado abaixo: ")
+    palette = sns.color_palette("mako_r", 6)
+    sns.lineplot(df_degelo_completo, x="ano", y="extensao_gelo", hue="hemisferio", style="hemisferio", palette=palette, markers=True, dashes=False)
+    st.pyplot(plt.show())
+    st.write("Pelo gráfico é possível observar alguns insights importantes. O mais importânte proposto aqui é a divergência da cobertura de gelo entre os hemisférios depois do ano de 2002. O hemisfério sul começa a apresentar uma área bastante superior ao hemisfério norte, coisa que não vinha ocorrendo e que se prolonga de 2002 até o ano de 2023.")
+    diff_2015 = df_degelo_completo[(df_degelo_completo["ano"] == 2015) & (df_degelo_completo["hemisferio"] == "hemisferio_sul")]["extensao_gelo"].values[0] - df_degelo_completo[(df_degelo_completo["ano"] == 2015) & (df_degelo_completo["hemisferio"] == "hemisferio_norte")]["extensao_gelo"].values[0]
+    st.write(f"A maior diferença é atingida no ano de 2015. Nesse ano os hemisférios apresentam {round(diff_2015,3)} milhões de km² de diferença, sendo hemisfério sul apresenta maior cobertura de gelo.")
 
 with conclusao:
     st.header("Conclusao")
