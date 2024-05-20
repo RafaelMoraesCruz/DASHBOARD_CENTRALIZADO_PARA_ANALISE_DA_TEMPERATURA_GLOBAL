@@ -219,4 +219,4 @@ with emissao_co2_analise:
 
 with conclusao:
     st.header("Conclusao")
-    st.write("CO2 -> Estes dados são cruciais para a formulação de políticas ambientais globais e nacionais, pois ajudam a identificar onde os esforços de mitigação podem ser mais eficazes e necessários.")""
+    st.write("CO2 -> Estes dados são cruciais para a formulação de políticas ambientais globais e nacionais, pois ajudam a identificar onde os esforços de mitigação podem ser mais eficazes e necessários.")
