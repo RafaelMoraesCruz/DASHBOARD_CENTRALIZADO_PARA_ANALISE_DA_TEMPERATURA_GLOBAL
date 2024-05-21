@@ -5,6 +5,14 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import plotly.express as px
 from pandas import DataFrame
+import statsmodels.api as sm
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from statsmodels.stats.outliers_influence import OLSInfluence
+import numpy as np
+
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 df_geral = pd.read_excel("./data/visao_geral_atributos_juntos.xlsx")
@@ -63,6 +71,7 @@ eda_section = st.container()
 cobertura_vegetal_analise = st.container()
 emissao_co2_analise = st.container()
 degelo = st.container()
+teste_de_hipotese = st.container()
 conclusao = st.container()
 
 with dados_section:
@@ -256,6 +265,41 @@ with degelo:
     diff_2015 = df_degelo_completo[(df_degelo_completo["ano"] == 2015) & (df_degelo_completo["hemisferio"] == "hemisferio_sul")]["extensao_gelo"].values[0] - df_degelo_completo[(df_degelo_completo["ano"] == 2015) & (df_degelo_completo["hemisferio"] == "hemisferio_norte")]["extensao_gelo"].values[0]
     st.write(f"A maior diferença é atingida no ano de 2015. Nesse ano os hemisférios apresentam {round(diff_2015,3)} milhões de km² de diferença, sendo hemisfério sul apresenta maior cobertura de gelo.")
 
+with teste_de_hipotese:
+    st.header("6. Teste de Hipótese")
+    st.write("Para ressaltar os resultados obtidos com esse estudo, se torna necessário a implementação de um teste de hipótese para envolver uma análise mais estatísta dos dados. O método estatístico escolhido foi o de regressão linear múltipla.")
+    st.write("<strong>Hipóteses a serem testadas:</strong>", unsafe_allow_html=True)
+    st.write("1-H0 As variáveis dependentes possuem valores significativos na temperatura global")
+    st.write("2-H1 As variáveis dependentes não possuem valores significativos na temperatura global")
+    st.write("Esse tipo de teste foi escolhido pois avalia o impacto combinado das variáveis independentes (emissão de CO2, perda de cobertura vegetal e cobertura de gelo) na variável target/dependente (temperatura global)")
+    # Regressão linear múltipla
+    df_geral_processed = df_geral.copy()
+    scaler = StandardScaler()
+
+    X = scaler.fit_transform(df_geral_processed[['emissoes_totais_co2', 'perda_cobertura_vegetal', 'cobertura_gelo', 'ano']])
+    print(X)
+    X = pd.DataFrame(X)
+    print(X)
+    X.rename(columns={0: 'emissoes_totais_co2', 1: "perda_cobertura_vegetal", 2: "cobertura_gelo", 3: "ano"}, inplace=True)
+    y = df_geral_processed['celsius']
+    X = sm.add_constant(X)
+    model = sm.OLS(y, X).fit()
+
+    influence = OLSInfluence(model)
+    standard_resid = influence.resid_studentized_internal
+
+    st.write('Como o foco do trabalho não é aprendizado de máquina, foi escolhido um modelo simples, o <a href="https://www.statsmodels.org/dev/generated/statsmodels.regression.linear_model.OLS.html">Ordinary Least Squares </a>, para que tivesse maior eficiência, antes do modelo ser executado foi feito um pré-processamento, pois os dados eram muito distantes com relação a variação de cada variável. Os resultados estatísticos obtidos foram:', unsafe_allow_html=True)
+    st.write('R-squared (R²): 0.382')
+    st.write('F-statistic: 2.477')
+    st.write('Prob (F-statistic): 0.0859')
+    st.write("<strong>P>|t|</strong>", unsafe_allow_html=True)
+    st.write("   Emissões Totais de CO2: 0.787")
+    st.write("   Perda de Cobertura Vegetal: 0.251")
+    st.write("   Cobertura de Gelo: 0.985")
+    st.write("   Ano: 0.440")
+    st.write("   <strong>Nenhum dos p-valor é significativo</strong>", unsafe_allow_html=True)
+
 with conclusao:
-    st.header("Conclusao")
-    st.write("CO2 -> Estes dados são cruciais para a formulação de políticas ambientais globais e nacionais, pois ajudam a identificar onde os esforços de mitigação podem ser mais eficazes e necessários.")
+    st.header("7. Conclusao")
+    st.write("Com base nos resultados, conclui-se que as variáveis emissões totais de CO2, perda de cobertura vegetal, cobertura de gelo e ano não têm um impacto estatisticamente significativo na temperatura global dentro do contexto deste modelo específico. A análise do p-valor da estatística F e dos coeficientes individuais indica que não podemos rejeitar a hipótese nula (H0), sugerindo que as variáveis independentes analisadas não são atributos significativos da temperatura global.")
+    st.write("Esses resultados indicam que outras variáveis, além das analisadas neste estudo, podem ter um impacto mais significativo na temperatura global. ")
