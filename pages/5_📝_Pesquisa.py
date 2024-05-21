@@ -302,4 +302,4 @@ with teste_de_hipotese:
 with conclusao:
     st.header("7. Conclusao")
     st.write("Com base nos resultados, conclui-se que as variáveis emissões totais de CO2, perda de cobertura vegetal, cobertura de gelo e ano não têm um impacto estatisticamente significativo na temperatura global dentro do contexto deste modelo específico. A análise do p-valor da estatística F e dos coeficientes individuais indica que não podemos rejeitar a hipótese nula (H0), sugerindo que as variáveis independentes analisadas não são atributos significativos da temperatura global.")
-    st.write("Esses resultados indicam que outras variáveis, além das analisadas neste estudo, podem ter um impacto mais significativo na temperatura global. ")
+    st.write("Esses resultados indicam que outras variáveis, além das analisadas, podem ter um impacto maior na temperatura global. ")
