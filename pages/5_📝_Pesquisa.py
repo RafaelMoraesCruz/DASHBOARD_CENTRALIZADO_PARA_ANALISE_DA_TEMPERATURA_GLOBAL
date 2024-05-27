@@ -7,11 +7,9 @@ import plotly.express as px
 from pandas import DataFrame
 import statsmodels.api as sm
 from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from statsmodels.stats.outliers_influence import OLSInfluence
-import numpy as np
+from scipy.stats import ttest_ind
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
@@ -39,7 +37,8 @@ def grafico_heatmap(df : DataFrame):
         annot=True,
         linewidths=0.01,
         cbar_kws={'label': 'Coeficiente de Correlação'})
-
+    plt.title("Correlação entre as variáveis")
+    
     return plt.show()
 
 def grafico_paises(df: DataFrame):
@@ -112,9 +111,9 @@ with dados_section:
 with eda_section:
 
     st.header("2. Exploração dos dados")
-    st.write("Começamos com a exploração dos dados usando a bibloteca ydata_profiling que antigamente se chamava pandas-profiling.\
-              A ferramenta é muito útil, pois automatiza o processo incial de Exploração dos dados gerando um relatório inicial sobre o conjunto de dados, \
-             oferecendo incialmente uma visão detalhada. Com o ydata_profiling é possível ter uma visão abrangente dos dados, identificação rápida da qualidade\
+    st.write("Começamos com a exploração dos dados usando a blibloteca ydata_profiling que antigamente se chamava pandas-profiling.\
+              A ferramenta é muito útil, pois automatiza o processo inicial de Exploração dos dados gerando um relatório inicial sobre o conjunto de dados, \
+             oferecendo inicialmente uma visão detalhada. Com o ydata_profiling é possível ter uma visão abrangente dos dados, identificação rápida da qualidade\
              dos dados, facilita o processo de limpeza...")
     
     st.write("<strong>Correlação dos atributos</strong>", unsafe_allow_html=True)
@@ -246,7 +245,7 @@ with degelo:
                                x="ano", y="representacao_total",
                                  color="hemisferio", 
                                  title="% que cada hemisfério representa no cenário global de cobertura de gelo",
-                                   text_auto=True)
+                                   text_auto=True, labels={"representação_total": "Extensão de gelo em %","Ano":"ano"})
     stacked_bar_plot.update_yaxes(range=[0,100] , ticksuffix="%")
     stacked_bar_plot.update_layout(legend=dict(
     orientation="h",
@@ -259,7 +258,9 @@ with degelo:
     st.write("Existe um balanço entre os hemisférios de cobertura de gelo, sendo 8% a máxima diferença que os hemisférios tiveram de representação. O ano de 2024 está tem uma grande diferença pois esse trabalho foi feito no primeiro semestre de 2024, logo o hemisfério sul ainda não teve o perído de inverno e o norte não teve o período de verão. Isso justifica a presença de uma área maior de gelo no hemisfério norte.")
     st.write("Para compreensão de números, o Gráfico de linhas fica de melhor visualização, esse gráfico pode ser encontrado abaixo: ")
     palette = sns.color_palette("mako_r", 6)
-    sns.lineplot(df_degelo_completo, x="ano", y="extensao_gelo", hue="hemisferio", style="hemisferio", palette=palette, markers=True, dashes=False)
+    sns.lineplot(df_degelo_completo, x="ano", y="extensao_gelo", hue="hemisferio", style="hemisferio", palette=palette, markers=True, dashes=False).set(title="Extensão de gelo por hemisfério")
+    plt.ylabel("Extensão de gelo")
+    plt.xlabel("Ano")
     st.pyplot(plt.show())
     st.write("Pelo gráfico é possível observar alguns insights importantes. O mais importânte proposto aqui é a divergência da cobertura de gelo entre os hemisférios depois do ano de 2002. O hemisfério sul começa a apresentar uma área bastante superior ao hemisfério norte, coisa que não vinha ocorrendo e que se prolonga de 2002 até o ano de 2023.")
     diff_2015 = df_degelo_completo[(df_degelo_completo["ano"] == 2015) & (df_degelo_completo["hemisferio"] == "hemisferio_sul")]["extensao_gelo"].values[0] - df_degelo_completo[(df_degelo_completo["ano"] == 2015) & (df_degelo_completo["hemisferio"] == "hemisferio_norte")]["extensao_gelo"].values[0]
@@ -267,6 +268,7 @@ with degelo:
 
 with teste_de_hipotese:
     st.header("6. Teste de Hipótese")
+    st.subheader("6.1 Teste de Hipótese variáveis dependentes")
     st.write("Para ressaltar os resultados obtidos com esse estudo, se torna necessário a implementação de um teste de hipótese para envolver uma análise mais estatísta dos dados. O método estatístico escolhido foi o de regressão linear múltipla.")
     st.write("<strong>Hipóteses a serem testadas:</strong>", unsafe_allow_html=True)
     st.write("1-H0 As variáveis dependentes possuem valores significativos na temperatura global")
@@ -277,9 +279,7 @@ with teste_de_hipotese:
     scaler = StandardScaler()
 
     X = scaler.fit_transform(df_geral_processed[['emissoes_totais_co2', 'perda_cobertura_vegetal', 'cobertura_gelo', 'ano']])
-    print(X)
     X = pd.DataFrame(X)
-    print(X)
     X.rename(columns={0: 'emissoes_totais_co2', 1: "perda_cobertura_vegetal", 2: "cobertura_gelo", 3: "ano"}, inplace=True)
     y = df_geral_processed['celsius']
     X = sm.add_constant(X)
@@ -299,7 +299,26 @@ with teste_de_hipotese:
     st.write("   Ano: 0.440")
     st.write("   <strong>Nenhum dos p-valor é significativo</strong>", unsafe_allow_html=True)
 
+    st.subheader("6.2 Teste de Hipótese anos 2015-2016")
+    st.write("Como foi ressaltado anteriormente, algumas variáveis apresentam dados divergentes nos anos 2015 e 2016, apresentando grandes picos. Para esse experimento, considera-se o atributo de perda de cobertura vegetal.")
+    st.write("<strong>Hipóteses a serem testadas:</strong>", unsafe_allow_html=True)
+    st.write("1-H0 A média da perda de cobertura vegetal nos anos de 2015-2016 é igual à média dos outros anos.")
+    st.write("2-H1 A média da perda de cobertura vegetal nos anos de 2015-2016 é diferente da média dos outros anos.")
+
+    periodo_2015_2016 = df_geral[(df_geral['ano'] >= 2015) & (df_geral['ano'] <= 2016)]
+    outros_anos = df_geral[(df_geral['ano'] < 2015) | (df_geral['ano'] > 2016)]
+
+    perda_2015_2016 = periodo_2015_2016['perda_cobertura_vegetal']
+    perda_outros_anos = outros_anos['perda_cobertura_vegetal']
+
+    t_stat, p_value = ttest_ind(perda_2015_2016, perda_outros_anos, equal_var=False)
+
+    st.write(f"Estatística t: {round(t_stat,2)}")
+    st.write(f"Valor p: {round(p_value,2)}")
+    st.write("Considerando um nível de significância de 0.05, tem-se que se o valor de p for menor do que o nível de significância então rejeita-se a hipótese nula, pois existe uma diferença significativa na média da perda de cobertura vegetal entre 2015 e 2016. Se o valor. Caso ao contrário, se o nível de significância fosse maior do que 0.05, Não rejeita-se a hipótese nula, pois não existe uma diferença significativa na média da perda de cobertura vegetal entre 2015 e 2016 e os outros anos.")
+    st.write("Nesse caso específico, não rejeitamos a hipotese nula. Ou seja, Não existe uma diferença significativa na média da perda de cobertura vegetal entre 2015-2016 e os outros anos, pois p-value > 0.05")
+
 with conclusao:
     st.header("7. Conclusao")
-    st.write("Com base nos resultados, conclui-se que as variáveis emissões totais de CO2, perda de cobertura vegetal, cobertura de gelo e ano não têm um impacto estatisticamente significativo na temperatura global dentro do contexto deste modelo específico. A análise do p-valor da estatística F e dos coeficientes individuais indica que não podemos rejeitar a hipótese nula (H0), sugerindo que as variáveis independentes analisadas não são atributos significativos da temperatura global.")
+    st.write("Com base nos resultados, conclui-se que as variáveis emissões totais de CO2, perda de cobertura vegetal, cobertura de gelo e ano não têm um impacto estatisticamente significativo na temperatura global dentro do contexto deste modelo específico. A análise do p-valor da estatística F e dos coeficientes individuais indica que não podemos rejeitar a hipótese nula (H0) do item 6,1, sugerindo que as variáveis independentes analisadas não são atributos significativos da temperatura global.")
     st.write("Esses resultados indicam que outras variáveis, além das analisadas, podem ter um impacto maior na temperatura global. ")
