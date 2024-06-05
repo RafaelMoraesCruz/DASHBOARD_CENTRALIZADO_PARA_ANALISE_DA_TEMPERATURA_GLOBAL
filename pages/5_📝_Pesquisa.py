@@ -23,11 +23,7 @@ df_degelo = pd.read_excel("./data/sea-ice-coverage/seaice-treated.xlsx")
 df_degelo.rename(columns={"Year": "ano", "ice-extent": "extensao_gelo", "hemisphere": "hemisferio"}, inplace=True)
 
 def grafico_heatmap(df : DataFrame):
-    cmap = sns.diverging_palette(
-    h_neg=240,
-    h_pos=10,
-    s=100,
-    as_cmap=True)
+    cmap = 'Blues'
     
     heatmap = sns.heatmap(df.corr(), fmt=".2f", cmap=cmap, 
         center=0,
