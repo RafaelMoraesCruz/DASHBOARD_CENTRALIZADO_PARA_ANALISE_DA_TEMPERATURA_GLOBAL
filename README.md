@@ -11,8 +11,11 @@
 <hr>
 <h2>Para hostear localmente</h2>
 <ol>
-  <li>Criar uma venv, para isso é necessário um terminal de comando e digitar python -m venv venv</li>
-  <li>Com a venv criada, é preciso a sua ativação: source ./venv/Scripts/activate</li>
-  <li>Com a venv ativada é preciso instalar os pacotes com o comando pip install -r requirements.txt</li>
-  <li>Com os pacotes instalados é possível hostear o dashboard localmente com a ajuda do streamlit, para isso, digite no terminal streamlit run 1_🌳_Perda_Cobertura_Vegetal.py</li>
+  <li>Criar uma venv, para isso é necessário um terminal de comando e digitar "python -m venv venv"</li>
+  <li>Com a venv criada, é preciso a sua ativação: "source ./venv/Scripts/activate"</li>
+  <li>Com a venv ativada é preciso instalar os pacotes com o comando "pip install -r requirements.txt"</li>
+  <li>Com os pacotes instalados é possível hostear o dashboard localmente com a ajuda do streamlit, para isso, digite no terminal "streamlit run 1_🌳_Perda_Cobertura_Vegetal.py"</li>
 </ol>
+
+<h3>Para mais informações sobre venvs</h3>
+<p>https://docs.python.org/3/library/venv.html</p>
